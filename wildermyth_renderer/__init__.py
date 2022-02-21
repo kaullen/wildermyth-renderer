@@ -1,6 +1,7 @@
 from .character_data import CharacterAspect
 from .character_data import CharacterData
 from .character_data import CharacterGender
+from .character_data import CharacterClass
 from .graph_renderer import GraphRenderer
 from .params import FilterParams
 from .params import RelationshipStatus

@@ -46,6 +46,11 @@ parser.add_argument('--norender', action='store_true',
                          'output path must still be specified in order to produce graph filenames)')
 
 rgroup = parser.add_argument_group(title='Rendering params')
+rgroup.add_argument('--no-gender-shapes', action='store_true',
+                    help='Flag to not choose node shapes according to character gender')
+rgroup.add_argument('--no-class-colors', '--no-class-colours', action='store_true',
+                    help='Flag to not choose node colors according to character class')
+
 rgroup.add_argument('-R', '--prioritize-relationships', '--prioritise-relationships', action='store_true',
                     help='Flag to prioritise relationships while rendering (sometimes provides cleaner results)')
 rgroup.add_argument('--hide-phantoms', action='store_true', help='Flag to hide unknown parents from chart')
@@ -155,6 +160,8 @@ def main(args_dict: Dict[str, Any]) -> None:
         norender=args_dict['norender'],
         render_dir=args_dict['render_dir'].absolute() if args_dict['render_dir'] is not None else None,
         clean_tmp_files=args_dict['clean_tmp_files'],
+        gender_shapes=not args_dict['no_gender_shapes'],
+        class_colors=not args_dict['no_class_colors'],
         include_legend=args_dict['include_legend'],
         prioritize_relationships=args_dict['prioritize_relationships'],
         hide_phantoms=args_dict['hide_phantoms'],

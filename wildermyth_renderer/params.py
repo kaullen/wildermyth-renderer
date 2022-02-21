@@ -39,6 +39,9 @@ class RendererParams:
     render_dir: Optional[Path] = None
     clean_tmp_files: bool = False
 
+    gender_shapes: bool = True
+    class_colors: bool = True
+
     include_legend: bool = False
 
     prioritize_relationships: bool = False

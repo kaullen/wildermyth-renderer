@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 import graphviz
 from PIL import Image
 
+from wildermyth_renderer.character_data import CharacterClass
 from wildermyth_renderer.character_data import CharacterGender
 
 if TYPE_CHECKING:
@@ -33,6 +34,13 @@ NODE_SHAPES = {
     CharacterGender.FEMALE: 'ellipse',
     CharacterGender.NONBINARY: 'diamond',
     CharacterGender.UNKNOWN: 'diamond',
+}
+
+NODE_COLORS = {
+    CharacterClass.WARRIOR: 'darkred',
+    CharacterClass.HUNTER: 'darkgreen',
+    CharacterClass.MYSTIC: 'blue',
+    CharacterClass.UNKNOWN: 'black',
 }
 
 PHANTOM_NODE_ATTRS = {
@@ -164,9 +172,20 @@ class GraphRenderer:
         label = node.label
         attrs = {}
 
-        gender = CharacterGender.UNKNOWN if node.character_data is None else node.character_data.gender
+        if not self.params.gender_shapes or node.character_data is None:
+            gender = CharacterGender.UNKNOWN
+        else:
+            gender = node.character_data.gender
         if gender in NODE_SHAPES:
             attrs['shape'] = NODE_SHAPES[gender]
+
+        if not self.params.class_colors or node.character_data is None:
+            character_class = CharacterClass.UNKNOWN
+        else:
+            character_class = node.character_data.character_class
+        if character_class in NODE_COLORS:
+            attrs['color'] = NODE_COLORS[character_class]
+            attrs['fontcolor'] = NODE_COLORS[character_class]
 
         if node.is_phantom:
             if self.params.hide_phantoms:

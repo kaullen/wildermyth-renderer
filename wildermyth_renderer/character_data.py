@@ -27,6 +27,13 @@ class CharacterGender(enum.Enum):
     UNKNOWN = 'unknown'
 
 
+class CharacterClass(enum.Enum):
+    WARRIOR = 'warrior'
+    HUNTER = 'hunter'
+    MYSTIC = 'mystic'
+    UNKNOWN = 'unknown'
+
+
 _CharacterAspect_T = TypeVar('_CharacterAspect_T', bound='CharacterAspect')
 
 
@@ -106,6 +113,13 @@ class CharacterData:
             if aspect.title in ('male', 'female', 'nonbinary'):
                 return CharacterGender(aspect.title)
         return CharacterGender.UNKNOWN
+
+    @cached_property
+    def character_class(self) -> CharacterClass:
+        for aspect in self.iter_aspects(present=True):
+            if aspect.title in ('warrior', 'hunter', 'mystic'):
+                return CharacterClass(aspect.title)
+        return CharacterClass.UNKNOWN
 
     def iter_aspects(self,
                      legacy: Optional[bool] = None,
