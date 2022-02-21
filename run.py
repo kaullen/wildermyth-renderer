@@ -48,7 +48,7 @@ rgroup.add_argument('--hide-phantoms', action='store_true', help='Flag to hide u
 
 rgroup.add_argument('-P', '--pack', action='store_true',
                     help='Flag to pack the chart neatly instead of spreading it horizontally')
-rgroup.add_argument('--pack-subgraphs', action='store_true',
+rgroup.add_argument('--pack-by-subgraphs', action='store_true',
                     help='Flag to spread out different components when packing the chart')
 rgroup.add_argument('-L', '--include-legend', action='store_true', help='Flag to include legend to the chart')
 
@@ -97,7 +97,14 @@ def prepare_relationship_list(rel_args: Optional[Iterable[str]]) -> Optional[Lis
             # common mistake
             rel_status = 'locked'
         rel_status = RelationshipStatus[rel_status.upper()]
-        if not has_type:
+        if has_type:
+            if rel_type in ('soulmate', 'soulmates'):
+                # locked lovers are called soulmates in game, it may cause confusion
+                rel_type = 'lover'
+            elif rel_type in ('lovers', 'rivals', 'friends'):
+                # in game files all the relationships are in singular form
+                rel_type = rel_type[:-1]
+        else:
             rel_type = '*'
         res.append((rel_status, rel_type))
     return res
@@ -147,7 +154,7 @@ def main(args_dict: Dict[str, Any]) -> None:
         prioritize_relationships=args_dict['prioritize_relationships'],
         hide_phantoms=args_dict['hide_phantoms'],
         pack_graph=args_dict['pack'],
-        pack_subgraphs=args_dict['pack_subgraphs'],
+        pack_by_subgraphs=args_dict['pack_by_subgraphs'],
     )
     renderer = GraphRenderer(renderer_params, chart)
     renderer.render()

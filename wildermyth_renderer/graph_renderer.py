@@ -207,11 +207,14 @@ class GraphRenderer:
                 if rel_target_id in self.nodes_in_graph:
                     self.relationship_graph.edge(node.id, rel_target_id, label='<&nbsp;&nbsp;>', **edge_attrs)
 
-    def make_legend_graph(self) -> graphviz.Digraph:
+    def make_legend_graph(self) -> Optional[graphviz.Digraph]:
         """
         Creates a graphviz.Digraph to represent legend for all relationship arrows present in the graph
-        :return: created legend digraph
+        :return: created legend digraph or None if no relationships are present
         """
+
+        if not self.edge_types_in_graph:
+            return None
 
         legend_graph = graphviz.Digraph(
             name=f"{self.params.graph_name}_legend",
@@ -265,7 +268,7 @@ class GraphRenderer:
         if self.params.pack_graph:
             graph_attrs.update({
                 'pack': 'true',
-                'packmode': 'graph' if self.params.pack_subgraphs else 'node',
+                'packmode': 'graph' if self.params.pack_by_subgraphs else 'node',
             })
 
         graph = graphviz.Digraph(
@@ -298,7 +301,7 @@ class GraphRenderer:
 
         tmp_files = [Path(main_graph.filepath), render_path]
 
-        if self.params.include_legend:
+        if self.params.include_legend and self.edge_types_in_graph:
             # after many hours of trying to make it work consistently with legend included as a subgraph
             # and encountering the weirdest assortment of graphviz bugs and quirks in the process,
             # I can say with certainty that simply rendering the two separately and stacking the images afterwards

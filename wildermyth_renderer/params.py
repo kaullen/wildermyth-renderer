@@ -43,7 +43,7 @@ class RendererParams:
     hide_phantoms: bool = False
 
     pack_graph: bool = False
-    pack_subgraphs: bool = False
+    pack_by_subgraphs: bool = False
 
     @property
     def graph_name(self) -> str:
