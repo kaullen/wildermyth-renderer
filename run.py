@@ -68,9 +68,9 @@ fgroup.add_argument('--exclude-relationships', nargs='+', default=None,
                     help='List of relationships to exclude; entry format is status[_type]')
 
 fgroup.add_argument('--include-heroes', nargs='+', default=None,
-                    help='List of heroes to include; accepts either name or id')
+                    help='List of heroes to include; accepts either name or id (short/long form)')
 fgroup.add_argument('--exclude-heroes', nargs='+', default=None,
-                    help='List of heroes to exclude; accepts either name or id')
+                    help='List of heroes to exclude; accepts either name or id (short/long form)')
 
 
 def load_legacy_json(legacy_path: Path) -> schemas.LegacyDict:

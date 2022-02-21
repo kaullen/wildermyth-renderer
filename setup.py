@@ -1,11 +1,17 @@
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
+
 import os
 
 import setuptools
 
 setup_dir = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(setup_dir, 'README.md'), encoding='utf-8') as fh:
-    readme = fh.read().strip()
+with open(os.path.join(setup_dir, 'README.md'), encoding='utf-8') as readme_file:
+    readme = readme_file.read().strip()
+
+with open(os.path.join(setup_dir, 'requirements.txt'), encoding='utf-8') as requirements_file:
+    requirements = [r.strip() for r in requirements_file.readlines() if r.strip()]
 
 setuptools.setup(
     name="wildermyth_renderer",
@@ -18,8 +24,5 @@ setuptools.setup(
     maintainer="KaulleN",
     packages=setuptools.find_packages(),
     python_requires='>=3.8',
-    install_requires=[
-        'graphviz==0.19.1',
-        'Pillow==9.0.1',
-    ],
+    install_requires=requirements,
 )

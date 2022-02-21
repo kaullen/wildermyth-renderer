@@ -359,7 +359,11 @@ class GraphRenderer:
                 tmp_files.append(render_path)
 
         if render_path is not None:
-            shutil.copyfile(render_path, self.params.output_path)
+            if not self.params.output_path.suffix.lower() == '.png':
+                output_path = self.params.output_path.with_suffix(f"{self.params.output_path.suffix}.png")
+            else:
+                output_path = self.params.output_path
+            shutil.copyfile(render_path, output_path)
 
         if self.params.clean_tmp_files:
             for tmp_file in tmp_files:
