@@ -130,6 +130,10 @@ RELATIONSHIP_EDGES = {
 
 
 class GraphRenderer:
+    """
+    Class that handles graph rendering and graphviz interaction
+    """
+
     def __init__(self, params: RendererParams, relationship_chart: Optional[RelationshipChart] = None) -> None:
         self.params = params
 
@@ -146,10 +150,17 @@ class GraphRenderer:
             self.add_from_chart(relationship_chart)
 
     def add_from_chart(self, relationship_chart: RelationshipChart) -> None:
+        """
+        Adds all nodes from a chart to graph
+        """
         for node in relationship_chart:
             self.add_node(node)
 
     def add_node(self, node: CharacterNode) -> None:
+        """
+        Adds a single character node to graph
+        """
+
         label = node.label
         attrs = {}
 
@@ -168,7 +179,7 @@ class GraphRenderer:
         self.nodes_in_graph.add(node.id)
 
         if node.parent_ids:
-            children_node_id = self.make_children_node_id(node.parent_ids)
+            children_node_id = self._make_children_node_id(node.parent_ids)
             if children_node_id not in self.nodes_in_graph:
                 self.family_graph.node(children_node_id, **INVISIBLE_NODE_ATTRS)
                 self.nodes_in_graph.add(children_node_id)
@@ -197,6 +208,11 @@ class GraphRenderer:
                     self.relationship_graph.edge(node.id, rel_target_id, label='<&nbsp;&nbsp;>', **edge_attrs)
 
     def make_legend_graph(self) -> graphviz.Digraph:
+        """
+        Creates a graphviz.Digraph to represent legend for all relationship arrows present in the graph
+        :return: created legend digraph
+        """
+
         legend_graph = graphviz.Digraph(
             name=f"{self.params.graph_name}_legend",
             format='png',
@@ -229,6 +245,7 @@ class GraphRenderer:
         endkey_lines.append(key_last_line)
 
         with legend_graph.subgraph(name='cluster_Legend') as s:
+            # make a cluster for no other reason than to have a neat border around it
             s.attr(label='<<b>Legend</b>>', style='bold')
             s.attr('node', shape='plaintext')
 
@@ -240,6 +257,10 @@ class GraphRenderer:
         return legend_graph
 
     def make_main_graph(self) -> graphviz.Digraph:
+        """
+        Creates a graphviz.Digraph with all the nodes and relationships added to the graph
+        :return: created digraph
+        """
         graph_attrs = GRAPH_ATTRS.copy()
         if self.params.pack_graph:
             graph_attrs.update({
@@ -254,6 +275,7 @@ class GraphRenderer:
             graph_attr=graph_attrs,
         )
 
+        # order of these parts sometimes seems to affect node placement, so this is left as an option
         subgraphs = [self.family_graph, self.relationship_graph]
         if self.params.prioritize_relationships:
             subgraphs.append(self.node_graph)
@@ -266,6 +288,9 @@ class GraphRenderer:
         return graph
 
     def render(self) -> None:
+        """
+        Renders the full graph (including legend if required) and saves in to output_path specified in renderer params
+        """
         main_graph = self.make_main_graph()
         main_graph.render()
 
@@ -274,6 +299,11 @@ class GraphRenderer:
         tmp_files = [Path(main_graph.filepath), render_path]
 
         if self.params.include_legend:
+            # after many hours of trying to make it work consistently with legend included as a subgraph
+            # and encountering the weirdest assortment of graphviz bugs and quirks in the process,
+            # I can say with certainty that simply rendering the two separately and stacking the images afterwards
+            # is the sanest possible approach
+
             legend_graph = self.make_legend_graph()
             legend_graph.render()
 
@@ -304,5 +334,5 @@ class GraphRenderer:
                     tmp_file.unlink(missing_ok=True)
 
     @classmethod
-    def make_children_node_id(cls, parent_ids: Set[str]) -> str:
+    def _make_children_node_id(cls, parent_ids: Set[str]) -> str:
         return f"children_{'_'.join(sorted(parent_ids))}"

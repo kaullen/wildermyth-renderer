@@ -13,12 +13,12 @@ class RelationshipStatus(enum.IntEnum):
     LOCKED = 1
 
 
-class ParamsError(Exception):
-    ...
-
-
 @dataclasses.dataclass(frozen=True)
 class FilterParams:
+    """
+    Parameters used for filtering relationship charts
+    """
+
     include_relationships: Optional[List[Tuple[RelationshipStatus, str]]] = None
     exclude_relationships: Optional[List[Tuple[RelationshipStatus, str]]] = None
 
@@ -28,6 +28,10 @@ class FilterParams:
 
 @dataclasses.dataclass(frozen=True)
 class RendererParams:
+    """
+    Parameters used for rendering graphs
+    """
+
     output_path: Path
 
     render_dir: Optional[Path] = None

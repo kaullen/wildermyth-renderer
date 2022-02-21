@@ -32,6 +32,10 @@ _CharacterAspect_T = TypeVar('_CharacterAspect_T', bound='CharacterAspect')
 
 @dataclasses.dataclass(frozen=True)
 class CharacterAspect:
+    """
+    Information about a single character aspect
+    """
+
     title: str
 
     data: Tuple[str] = ()
@@ -43,6 +47,14 @@ class CharacterAspect:
 
     @classmethod
     def from_aspect_data(cls: Type[_CharacterAspect_T], aspect_data: Tuple, **kwargs) -> _CharacterAspect_T:
+        """
+        Creates a CharacterAspect instance from aspect data as seen in legacy JSON
+        :param aspect_data: aspect data from legacy JSON,
+            can be either [aspect_string, value] or [aspect_string, {"aspect": aspect_string, "value": value}]
+            (in both cases value can be missing)
+        :param kwargs: extra kwargs passed directly to created aspect
+        :return: created CharacterAspect instance
+        """
         aspect_data = cls._normalize_aspect_data(aspect_data)
 
         title, has_data, data_str = aspect_data['aspect'].partition('|')
@@ -75,6 +87,10 @@ _CharacterData_T = TypeVar('_CharacterData_T', bound='CharacterData')
 
 @dataclasses.dataclass(frozen=True)
 class CharacterData:
+    """
+    Information about a single character
+    """
+
     id: str
 
     name: str
@@ -91,6 +107,12 @@ class CharacterData:
                      legacy: Optional[bool] = None,
                      present: Optional[bool] = None,
                      ) -> Generator[CharacterAspect, None, None]:
+        """
+        Iterates character aspects with optional filters
+        :param legacy: if not None, only aspects with is_legacy equal to this will be iterated
+        :param present: if not None, only aspects with is_past NOT equal to this will be iterated
+        :return: iterator of all relevant aspects
+        """
         for aspect in self.aspects:
             if legacy is not None and legacy != aspect.is_legacy:
                 continue
@@ -101,6 +123,11 @@ class CharacterData:
     @classmethod
     def from_entity_dicts(cls: Type[_CharacterData_T],
                           *entity_snapshots: schemas.ProcessedIndividualDict) -> _CharacterData_T:
+        """
+        Creates a CharacterData instance from a list of different snapshots of the same individual from legacy JSON
+        :param entity_snapshots: preprocessed entity dictionaries of an individual
+        :return: created CharacterData instance
+        """
         last_snapshot = entity_snapshots[-1]
 
         id_ = last_snapshot['id']['value']

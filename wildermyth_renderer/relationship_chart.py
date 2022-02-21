@@ -33,6 +33,10 @@ log = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class CharacterNode:
+    """
+    A node representing a single character in a relationship chart
+    """
+
     id: str
     label: str
 
@@ -59,6 +63,10 @@ _RelationshipChart_T = TypeVar('_RelationshipChart_T', bound='RelationshipChart'
 
 @dataclasses.dataclass
 class RelationshipChart:
+    """
+    Class that stores a set of characters and their relationships and allows for their modification and filtering
+    """
+
     nodes: Dict[str, CharacterNode] = dataclasses.field(default_factory=dict)
 
     def __iter__(self) -> Iterator[CharacterNode]:
@@ -177,7 +185,15 @@ class RelationshipChart:
         first_node.relationships[rel_status, rel_type].discard(second_id)
         second_node.relationships[rel_status, rel_type].discard(first_id)
 
-    def remove_unwanted_phantoms(self, clear_relations: bool = True) -> None:
+    def remove_redundant_phantoms(self, clear_relations: bool = True) -> None:
+        """
+        Removes all phantom parents that are redundant due to real parents or other phantoms having all their children;
+        also cleans up situations where more than two characters are sisters with each other through unknown parents,
+        replacing all these parents with a single phantom
+        :param clear_relations: whether to remove all connections with removed phantoms from other nodes
+            (makes sense to set to False if remove_dead_edges will be called afterwards anyway)
+        """
+
         remove_ids = []
         for node in self:
             if not node.is_phantom:
@@ -212,6 +228,10 @@ class RelationshipChart:
             self.remove_node(remove_id, clear_relations=clear_relations)
 
     def remove_dead_edges(self) -> None:
+        """
+        Remove all connections from all nodes with targets that are not in the chart
+        """
+
         for node in self:
             node.parent_ids.intersection_update(self.nodes.keys())
             node.child_ids.intersection_update(self.nodes.keys())
@@ -219,6 +239,10 @@ class RelationshipChart:
                 rel_target_ids.intersection_update(self.nodes.keys())
 
     def ensure_everything_mutual(self) -> None:
+        """
+        Makes all connections mutual in case nodes/connections were added manually and some relations may be one-sided
+        """
+
         for node in self:
             for child in self.children(node):
                 child.parent_ids.add(node.id)
@@ -229,7 +253,7 @@ class RelationshipChart:
                 rel_target.relationships[rel_status, rel_type].add(node.id)
 
     def postprocess(self) -> None:
-        self.remove_unwanted_phantoms(clear_relations=False)
+        self.remove_redundant_phantoms(clear_relations=False)
         self.remove_dead_edges()
         self.ensure_everything_mutual()
 
@@ -237,6 +261,15 @@ class RelationshipChart:
                              allowed_relationships: Optional[Iterable[Tuple[RelationshipStatus, str]]] = None,
                              disallowed_relationships: Optional[Iterable[Tuple[RelationshipStatus, str]]] = None,
                              inplace: bool = False) -> Optional[_RelationshipChart_T]:
+        """
+        Removes relationships from chart according to specified filters; wildcard relationship types are supported
+        :param allowed_relationships: if not None, only relationships present in this list will remain
+        :param disallowed_relationships: if not None, any relationships in this list will be removed
+            (even if present in allowed_relationships)
+        :param inplace: if False, a new copy of this chart will be created for these changes
+        :return: None if inplace is True, else newly created chart
+        """
+
         if not inplace:
             chart = deepcopy(self)
             chart.filter_relationships(allowed_relationships, inplace=True)
@@ -261,9 +294,66 @@ class RelationshipChart:
             node.relationships = new_relationships
         return None
 
+    def trim(self: _RelationshipChart_T,
+             anchor_ids: Optional[Iterable[str]] = None,
+             exclude_ids: Optional[Iterable[str]] = None,
+             clear_relations: bool = True,
+             inplace: bool = False) -> Optional[_RelationshipChart_T]:
+        """
+        Removes nodes from chart according to specified filters
+        :param anchor_ids: if not None, only nodes in this list, their relatives and direct relationships will remain
+        :param exclude_ids: if not None, any nodes in this list will be removed (even if present in anchor_ids)
+            and their relations will not be processed
+        :param clear_relations: whether to remove all connections with removed nodes from other nodes
+            (makes sense to set to False if remove_dead_edges will be called afterwards anyway)
+        :param inplace: if False, a new copy of this chart will be created for these changes
+        :return: None if inplace is True, else newly created chart
+        """
+
+        if not inplace:
+            chart = deepcopy(self)
+            chart.trim(anchor_ids, inplace=True)
+            return chart
+
+        anchor_ids = set(anchor_ids) if anchor_ids is not None else set(self.nodes.keys())
+        exclude_ids = set(exclude_ids) if exclude_ids is not None else set()
+
+        def _get_related_nodes(current_node_ids: Set[str], res_set: Set[str]) -> Set[str]:
+            res_set.update(current_node_ids)
+            new_node_ids = set()
+            for current_node_id in current_node_ids:
+                current_node = self.get_node(current_node_id)
+                new_node_ids.update(current_node.parent_ids)
+                new_node_ids.update(current_node.child_ids)
+            new_node_ids.difference_update(res_set)
+            new_node_ids.difference_update(exclude_ids)
+            if not new_node_ids:
+                return res_set
+            return _get_related_nodes(new_node_ids, res_set)
+
+        related_nodes = _get_related_nodes(anchor_ids, set())
+        for node_id in anchor_ids.difference(exclude_ids):
+            node = self.get_node(node_id)
+            for rel_target_ids in node.relationships.values():
+                rel_target_ids = rel_target_ids.difference(exclude_ids)
+                related_nodes.update(rel_target_ids)
+
+        self.nodes = {k: v for k, v in self.nodes.items() if k in related_nodes}
+        if clear_relations:
+            self.remove_redundant_phantoms(clear_relations=False)
+            self.remove_dead_edges()
+        return None
+
     def apply_filter_params(self: _RelationshipChart_T,
                             params: FilterParams,
                             inplace: bool = False) -> Optional[_RelationshipChart_T]:
+        """
+        Applies all filter params
+        :param params: FilterParams instance specifying filters to apply
+        :param inplace: if False, a new copy of this chart will be created for these changes
+        :return: None if inplace is True, else newly created chart
+        """
+
         if not inplace:
             chart = deepcopy(self)
             chart.apply_filter_params(params, inplace=True)
@@ -273,46 +363,19 @@ class RelationshipChart:
             self.filter_relationships(params.include_relationships, params.exclude_relationships, inplace=True)
 
         if params.include_heroes is not None or params.exclude_heroes is not None:
-            self.trim(params.include_heroes, params.exclude_heroes, inplace=True)
+            self.trim(params.include_heroes, params.exclude_heroes, clear_relations=False, inplace=True)
 
-        return None
-
-    def trim(self: _RelationshipChart_T,
-             anchor_ids: Optional[Iterable[str]] = None,
-             exclude_ids: Optional[Iterable[str]] = None,
-             inplace: bool = False) -> Optional[_RelationshipChart_T]:
-        if not inplace:
-            chart = deepcopy(self)
-            chart.trim(anchor_ids, inplace=True)
-            return chart
-
-        def _get_related_nodes(current_node_ids: Iterable[str], res_set: Set[str]) -> Set[str]:
-            res_set.update(current_node_ids)
-            new_node_ids = set()
-            for current_node_id in current_node_ids:
-                current_node = self.get_node(current_node_id)
-                new_node_ids.update(current_node.parent_ids)
-                new_node_ids.update(current_node.child_ids)
-            new_node_ids.difference_update(res_set)
-            if exclude_ids is not None:
-                new_node_ids.difference_update(exclude_ids)
-            if not new_node_ids:
-                return res_set
-            return _get_related_nodes(new_node_ids, res_set)
-
-        related_nodes = _get_related_nodes(anchor_ids, set())
-        for node_id in anchor_ids:
-            node = self.get_node(node_id)
-            for rel_target_ids in node.relationships.values():
-                if exclude_ids is not None:
-                    rel_target_ids = rel_target_ids.difference(exclude_ids)
-                related_nodes.update(rel_target_ids)
-
-        self.nodes = {k: v for k, v in self.nodes.items() if k in related_nodes}
+        self.remove_redundant_phantoms()
         self.remove_dead_edges()
         return None
 
     def clean_relationships(self: _RelationshipChart_T, inplace: bool = False) -> Optional[_RelationshipChart_T]:
+        """
+        Leaves only the relationship with the strongest status for each relationship type for every pair of nodes
+        :param inplace: if False, a new copy of this chart will be created for these changes
+        :return: None if inplace is True, else newly created chart
+        """
+
         if not inplace:
             chart = deepcopy(self)
             chart.clean_relationships(inplace=True)
@@ -345,6 +408,14 @@ class RelationshipChart:
     def from_character_data(cls: Type[_RelationshipChart_T],
                             characters: List[CharacterData],
                             postprocess: bool = True) -> _RelationshipChart_T:
+        """
+        Creates a RelationshipChart instance from a list of characters
+        :param characters: list of CharacterData instances representing characters in the chart
+        :param postprocess: whether to cleanup the chart after creation
+            (currently there's no reason not to, unless more nodes/relationships are to be added manually later)
+        :return: created RelationshipChart instance
+        """
+
         chart = cls.from_node_list([
             CharacterNode(id=cdata.id, label=cdata.name, character_data=cdata)
             for cdata in characters

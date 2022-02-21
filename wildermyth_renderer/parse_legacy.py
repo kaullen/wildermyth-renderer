@@ -15,6 +15,11 @@ log = logging.getLogger(__name__)
 
 
 def entity_to_dict(entity: List[Union[str, Dict]]) -> Dict[str, Dict]:
+    """
+    Converts a [id, key1, val1, key2, val2, ...] list used for describing entities in legacy JSON
+    into a {"id": id, key1: val1, key2: val2, ...} dictionary
+    """
+
     entity_dict = {}
     for idx in range(0, len(entity), 2):
         key = 'id' if idx == 0 else entity[idx - 1]
@@ -28,6 +33,12 @@ def entity_to_dict(entity: List[Union[str, Dict]]) -> Dict[str, Dict]:
 
 
 def extract_individual_entities(legacy_dict: schemas.LegacyDict) -> List[List[schemas.ProcessedIndividualDict]]:
+    """
+    Extracts all entities describing individuals from legacy dictionary
+    :param legacy_dict: legacy dictionary, read directly from JSON
+    :return: List of lists of different character snapshots for each character
+    """
+
     res = []
     for legacy_entry in legacy_dict['entries']:
         if legacy_entry['type'] != 'INDIVIDUAL':
