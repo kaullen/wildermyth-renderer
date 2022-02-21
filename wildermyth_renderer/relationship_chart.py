@@ -107,7 +107,13 @@ class RelationshipChart:
             elif target.id in source_rel_target_ids:
                 yield source, target, source_rel_status, source_rel_type
 
-    def label_lookup(self) -> DefaultDict[str, List[CharacterNode]]:
+    def make_short_id_lookup(self) -> Dict[str, CharacterNode]:
+        res = {}
+        for node in self:
+            res[node.id.split('-')[0]] = node
+        return res
+
+    def make_label_lookup(self) -> DefaultDict[str, List[CharacterNode]]:
         res = defaultdict(list)
         for node in self:
             res[node.label].append(node)

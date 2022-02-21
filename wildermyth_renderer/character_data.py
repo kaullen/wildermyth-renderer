@@ -97,6 +97,10 @@ class CharacterData:
     aspects: List[CharacterAspect]
 
     @cached_property
+    def short_id(self) -> str:
+        return self.id.split('-', 1)[0]
+
+    @cached_property
     def gender(self) -> CharacterGender:
         for aspect in self.iter_aspects(present=True):
             if aspect.title in ('male', 'female', 'nonbinary'):

@@ -107,10 +107,13 @@ def prepare_hero_list(hero_args: Optional[Iterable[str]], chart: RelationshipCha
     if hero_args is None:
         return None
     res = []
-    label_lookup = chart.label_lookup()
+    label_lookup = chart.make_label_lookup()
+    short_id_lookup = chart.make_short_id_lookup()
     for hero_str in hero_args:
         if hero_str in chart.nodes:
             res.append(hero_str)
+        elif hero_str in short_id_lookup:
+            res.append(short_id_lookup[hero_str].id)
         elif hero_str in label_lookup:
             res.extend([n.id for n in label_lookup[hero_str]])
         else:
