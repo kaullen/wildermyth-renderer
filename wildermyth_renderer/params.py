@@ -34,6 +34,8 @@ class RendererParams:
 
     output_path: Path
 
+    norender: bool = False
+
     render_dir: Optional[Path] = None
     clean_tmp_files: bool = False
 

@@ -40,6 +40,10 @@ parser.add_argument('-o', '--output-path', type=Path, default=Path('chart.png'),
 parser.add_argument('-r', '--render-dir', type=Path, default=None, help='Directory for temporary render files')
 parser.add_argument('-c', '--clean-tmp-files', action='store_true',
                     help='Flag to clean temporary files after rendering')
+parser.add_argument('--norender', action='store_true',
+                    help='Flag to not render any images and instead create raw .gv files '
+                         '(if --clean-tmp-files is specified, nothing will be left at all; '
+                         'output path must still be specified in order to produce graph filenames)')
 
 rgroup = parser.add_argument_group(title='Rendering params')
 rgroup.add_argument('-R', '--prioritize-relationships', '--prioritise-relationships', action='store_true',
@@ -148,6 +152,7 @@ def main(args_dict: Dict[str, Any]) -> None:
 
     renderer_params = RendererParams(
         output_path=args_dict['output_path'].absolute(),
+        norender=args_dict['norender'],
         render_dir=args_dict['render_dir'].absolute() if args_dict['render_dir'] is not None else None,
         clean_tmp_files=args_dict['clean_tmp_files'],
         include_legend=args_dict['include_legend'],

@@ -294,12 +294,18 @@ class GraphRenderer:
         """
         Renders the full graph (including legend if required) and saves in to output_path specified in renderer params
         """
+        tmp_files = []
+
         main_graph = self.make_main_graph()
-        main_graph.render()
+        tmp_files.append(Path(main_graph.filepath))
 
-        render_path = Path(f"{main_graph.filepath}.png")
-
-        tmp_files = [Path(main_graph.filepath), render_path]
+        if self.params.norender:
+            main_graph.save()
+            render_path = None
+        else:
+            main_graph.render()
+            render_path = Path(f"{main_graph.filepath}.png")
+            tmp_files.append(render_path)
 
         if self.params.include_legend and self.edge_types_in_graph:
             # after many hours of trying to make it work consistently with legend included as a subgraph
@@ -308,32 +314,37 @@ class GraphRenderer:
             # is the sanest possible approach
 
             legend_graph = self.make_legend_graph()
-            legend_graph.render()
+            tmp_files.append(Path(legend_graph.filepath))
 
-            legend_render_path = Path(f"{legend_graph.filepath}.png")
+            if self.params.norender:
+                legend_graph.save()
+                legend_render_path = None
+            else:
+                legend_graph.render()
+                legend_render_path = Path(f"{legend_graph.filepath}.png")
+                tmp_files.append(legend_render_path)
 
-            tmp_files.extend([Path(legend_graph.filepath), legend_render_path])
+                main_image = Image.open(render_path)
+                legend_image = Image.open(legend_render_path)
+                combined_image = Image.new(
+                    'RGB',
+                    (max(main_image.width, legend_image.width), main_image.height + legend_image.height),
+                    color='white',
+                )
+                combined_image.paste(main_image, (0, 0))
+                combined_image.paste(legend_image, (0, main_image.height))
 
-            main_image = Image.open(render_path)
-            legend_image = Image.open(legend_render_path)
-            combined_image = Image.new(
-                'RGB',
-                (max(main_image.width, legend_image.width), main_image.height + legend_image.height),
-                color='white',
-            )
-            combined_image.paste(main_image, (0, 0))
-            combined_image.paste(legend_image, (0, main_image.height))
+                render_path = self.params.get_render_dir() / f"{main_graph.name}_with_legend.png"
+                combined_image.save(render_path)
 
-            render_path = self.params.get_render_dir() / f"{main_graph.name}_with_legend.png"
-            combined_image.save(render_path)
+                tmp_files.append(render_path)
 
-            tmp_files.append(render_path)
-
-        shutil.copyfile(render_path, self.params.output_path)
+        if render_path is not None:
+            shutil.copyfile(render_path, self.params.output_path)
 
         if self.params.clean_tmp_files:
             for tmp_file in tmp_files:
-                if tmp_file != self.params.output_path:
+                if tmp_file is not None and tmp_file != self.params.output_path:
                     tmp_file.unlink(missing_ok=True)
 
     @classmethod
