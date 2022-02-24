@@ -168,6 +168,14 @@ class CharacterData:
                     is_past=False,
                     snapshot_id=0,
                 ))
+        if 'extraLegacyAspects' in last_snapshot:
+            for legacy_aspect in last_snapshot['extraLegacyAspects']['entries']:
+                aspects.append(CharacterAspect.from_aspect_data(
+                    legacy_aspect,
+                    is_legacy=True,
+                    is_past=False,
+                    snapshot_id=0,
+                ))
 
         for idx, past_snapshot in enumerate(entity_snapshots[-2::-1]):
             for aspect_data in past_snapshot['status']['aspects']['entries']:

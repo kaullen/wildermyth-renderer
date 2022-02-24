@@ -40,6 +40,7 @@ class ProcessedIndividualDict(TypedDict, total=False):
     id: IdDict
     status: IndividualStatusDict
     history: IndividualHistoryDict
+    extraLegacyAspects: LegacyAspectsDict
 
 
 class SnapshotDict(TypedDict, total=False):
@@ -51,6 +52,7 @@ class EntryDict(TypedDict, total=False):
     id: IdDict
     type: str
     snapshots: List[SnapshotDict]
+    legacyAspects: Optional[LegacyAspectsDict]
 
 
 class LegacyDict(TypedDict, total=False):

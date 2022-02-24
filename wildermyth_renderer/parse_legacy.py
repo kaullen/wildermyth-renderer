@@ -57,7 +57,9 @@ def extract_individual_entities(legacy_dict: schemas.LegacyDict) -> List[List[sc
                           legacy_entry['id']['value'], idx + 1)
                 continue
             else:
-                entity_snapshots.append(entity_to_dict(individual_entity))
+                entity_dict = entity_to_dict(individual_entity)
+                entity_dict['extraLegacyAspects'] = legacy_entry.get('legacyAspects')
+                entity_snapshots.append(entity_dict)
 
         if entity_snapshots:
             res.append(entity_snapshots)
