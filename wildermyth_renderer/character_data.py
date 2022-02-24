@@ -168,7 +168,7 @@ class CharacterData:
                     is_past=False,
                     snapshot_id=0,
                 ))
-        if 'extraLegacyAspects' in last_snapshot:
+        if last_snapshot.get('extraLegacyAspects') is not None:
             for legacy_aspect in last_snapshot['extraLegacyAspects']['entries']:
                 aspects.append(CharacterAspect.from_aspect_data(
                     legacy_aspect,
